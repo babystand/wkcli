@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Wani Kani CLI", "Wani Kani CLI\Wani Kani CLI.fsproj", "{D195BAF3-0D24-4502-84F8-2F486D419131}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D195BAF3-0D24-4502-84F8-2F486D419131}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D195BAF3-0D24-4502-84F8-2F486D419131}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D195BAF3-0D24-4502-84F8-2F486D419131}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D195BAF3-0D24-4502-84F8-2F486D419131}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
