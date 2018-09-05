@@ -14,6 +14,6 @@ open canopy.classic
 let main argv =
     start canopy.types.BrowserStartMode.ChromeHeadless
     File.Delete(configPath)
-    printfn "%s" <| login ( getCreds())
+    printfn "%O" <| login ( getCreds())
     quit ()
     0
