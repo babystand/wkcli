@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <Compile Include="Config.fs" />
+        <Compile Include="KanaInput.fs" />
         <Compile Include="WaniKani.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
