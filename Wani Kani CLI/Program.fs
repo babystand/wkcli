@@ -14,10 +14,8 @@ open canopy.classic
 [<EntryPoint>]
 let main argv =
     System.Console.OutputEncoding <- System.Text.Encoding.UTF8
-    let kana = getKanaInput()
-    printfn "made %s" kana
-//    start canopy.types.BrowserStartMode.ChromeHeadless
-//    File.Delete(configPath)
-//    printfn "%O" <| login ( getCreds())
-//    quit ()
+    start canopy.types.BrowserStartMode.ChromeHeadless
+    printfn "%O" <| login ( getCreds())
+    runReview () |> ignore
+    quit ()
     0
