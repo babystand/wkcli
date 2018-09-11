@@ -8,6 +8,7 @@ open System
 open System.Drawing
 open Colorful
 open KanaInput
+open canopy
 
 type Console = Colorful.Console
 
@@ -27,7 +28,10 @@ type Page =
     | Review of ReviewType * ReviewAnswerInfo option
     | ResultsPage
     | OuterSpace
-
+let expandReviewItemInfo () =
+    do click "html body div#reviews.pure-g-r div.pure-u-1 div#additional-content ul li#option-item-info"
+    do waitForElement "#item-info"
+    
 let getColor state =
     match state with
     | RadicalName _ -> Color.FromArgb(0, 0xa1, 0xf1)
@@ -87,8 +91,8 @@ let viewReview rt rai : unit =
     | None -> viewReviewPrompt rt
     | Some(b, y) -> 
         let color =
-            if b then Color.Red
-            else Color.Green
+            if b then Color.Green
+            else Color.Red
         (!!!) (toPrompt rt) color
         y |> List.iter (fun (x, z) -> (!!!) (sprintf "%s: %s\r\n" x z) color)
         (!!!) "Press any key to continue." Color.White
@@ -102,12 +106,12 @@ let viewPage page : unit =
     | Review(x, y) -> viewReview x y
 
 let routeToPage page =
-    match page with
-    | Login -> "https://www.wanikani.com/login"
-    | DashBoard -> "https://www.wanikani.com/dashboard"
-    | ResultsPage -> "https://www.wanikani.com/review"
-    | Review _ -> "https://www.wanikani.com/review/session"
-    | _ -> "https://www.wanikani.com/dashboard"
+    url <| match page with
+           | Login -> "https://www.wanikani.com/login"
+           | DashBoard -> "https://www.wanikani.com/dashboard"
+           | ResultsPage -> "https://www.wanikani.com/review"
+           | Review _ -> "https://www.wanikani.com/review/session"
+           | _ -> "https://www.wanikani.com/dashboard"
 
 let goToDashboard() =
     url "https://wanikani.com/dashboard"
@@ -119,12 +123,41 @@ let login creds =
     "#user_password" << creds.password
     click "html body section.session.login div.wrapper form#new_user.new_user fieldset button.button" //submit
 
-
+let goToReview() = url "https://www.wanikani.com/review/session"
 //need to wire up actions to each page, as well as update tree to run recursively
-
 let waitForKeyPress() = Console.ReadKey() |> ignore
 
 let waitForInput rt : string =
     match rt with
     | RadicalName _ | KanjiMeaning _ | VocabMeaning _ -> Console.ReadLine()
     | _ -> getKanaInput()
+
+let clickReviewNext() =
+    click "html body div#reviews.pure-g-r div.pure-u-1 div#question div#answer-form form fieldset button"
+
+let submitReviewAnswer ans =
+    "#user-response" << ans
+    do clickReviewNext()
+
+let rec runPage page =
+    do viewPage page
+    match page with
+    | Login -> 
+        do waitForKeyPress()
+        do login <| getCreds()
+    | DashBoard -> 
+        do waitForKeyPress()
+        do goToReview()
+    | Review(rt, None) -> 
+        let input = waitForInput rt
+        do submitReviewAnswer input
+    | Review(rt, Some(b, ls)) -> 
+        do waitForKeyPress()
+        do clickReviewNext()
+    | ResultsPage -> 
+        do waitForKeyPress()
+        do routeToPage DashBoard
+    | OuterSpace -> 
+        do waitForKeyPress()
+        do routeToPage DashBoard
+    runPage <| parsePage()
