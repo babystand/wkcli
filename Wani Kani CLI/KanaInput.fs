@@ -111,6 +111,7 @@ let convertPart (str : string) =
     | "gya" -> Kana "ぎゃ"
     | "gyu" -> Kana "ぎゅ"
     | "gyo" -> Kana "ぎょ"
+    | "ji" -> Kana "じ"
     | "ja" -> Kana "じゃ"
     | "ju" -> Kana "じゅ"
     | "jo" -> Kana "じょ"
@@ -161,4 +162,6 @@ let getKanaInput() =
         | System.ConsoleKey.Enter -> flatten state
         | System.ConsoleKey.Backspace -> backspace state |> readKana
         | _ -> readKana <| convertInput state (k.KeyChar.ToString())
-    readKana init
+    let res =readKana init
+    printfn ""
+    res

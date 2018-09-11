@@ -19,7 +19,7 @@ type ReviewType =
     | VocabMeaning of string
     | VocabSpelling of string
 
-type ReviewAnswerInfo = bool * (string * string) list
+type ReviewAnswerInfo = bool * string list
 
 //let's write a state machine!
 type Page =
@@ -32,15 +32,34 @@ let expandReviewItemInfo () =
     do click "html body div#reviews.pure-g-r div.pure-u-1 div#additional-content ul li#option-item-info"
     do waitForElement "#item-info"
     
+let parseExtraInfo rt =
+    expandReviewItemInfo ()
+    match rt with 
+    | KanjiMeaning _ | VocabMeaning _->
+            let bm = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col1.pure-u-1-4 section#item-info-meaning"
+            let hb = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col2.pure-u-3-4 section#item-info-meaning-mnemonic"
+            [bm;hb]
+    | KanjiSpelling _ | VocabSpelling _-> 
+            let br = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col1.pure-u-1-4 section#item-info-reading"
+            let hr = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col2.pure-u-3-4 section#item-info-reading-mnemonic"
+            [br;hr]
+    | RadicalName _ ->
+            let nr = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col1.pure-u-1-4 section"
+            let hr = read "html body div#reviews.pure-g-r div.pure-u-1 div#information div#item-info div.pure-g-r div#item-info-col2.pure-u-3-4 section"
+            [nr;hr]
+
+
+
 let getColor state =
     match state with
-    | RadicalName _ -> Color.FromArgb(0, 0xa1, 0xf1)
-    | KanjiMeaning _ | KanjiSpelling _ -> Color.FromArgb(0xf1, 0, 0xa1)
-    | VocabMeaning _ | VocabSpelling _ -> Color.FromArgb(0xa1, 0, 0xf1)
+    | RadicalName _ -> Color.LightBlue
+    | KanjiMeaning _ | KanjiSpelling _ -> Color.Purple
+    | VocabMeaning _ | VocabSpelling _ -> Color.YellowGreen
 
 let (!!!) (str : string) (col : Color) : unit = Console.WriteLine(str, col)
 
 let parseReviewType() =
+    waitForElement "#character"
     let itemType = (element "#character").GetAttribute("class")
     let questionType = (element "#question-type").GetAttribute("class")
     let item = read "#character>span"
@@ -68,8 +87,10 @@ let parseReviewPage() =
             .GetAttribute("class")
     match box with
     | "" -> Review(reviewType, None)
-    | "correct" -> Review(reviewType, Some(true, []))
-    | "incorrect" -> Review(reviewType, Some(false, []))
+    | "correct" -> 
+            Review(reviewType, Some(true, parseExtraInfo reviewType))
+    | "incorrect" -> 
+                Review(reviewType, Some(false, parseExtraInfo reviewType))
     | _ -> failwith "couldn't parse success status"
 
 let parsePage() =
@@ -91,10 +112,11 @@ let viewReview rt rai : unit =
     | None -> viewReviewPrompt rt
     | Some(b, y) -> 
         let color =
-            if b then Color.Green
-            else Color.Red
+            if b then Color.Red
+            else Color.Green
         (!!!) (toPrompt rt) color
-        y |> List.iter (fun (x, z) -> (!!!) (sprintf "%s: %s\r\n" x z) color)
+        y |> List.iter (fun x -> (!!!) (sprintf "%s\r\n***" x) color)
+        if b then (!!!) "Correct!" color else (!!!) "Incorrect!" color
         (!!!) "Press any key to continue." Color.White
 
 let viewPage page : unit =
