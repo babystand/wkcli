@@ -1,1 +1,24 @@
-Wani Kani CLI
+# Wani Kani CLI
+
+## WaniKani reviews from the comfort of the terminal!
+
+Pros:
+
+- Provides kana input for Japanese reading review items without the need for an IME
+- Displays additional information and mnemonics to submitted answers
+- More condensed/streamlined than the web experience
+- Makes it look like you're hard at work doing hacker things
+
+Cons:
+
+- Some characters (esp. radicals) may have rendering issues depending on terminal font
+- Does not (yet) provide a view for the results page at the end of a review
+- Does not (yet) work for lessons
+- If you somehow get navigated outside of the login, dashboard, or review pages the program will HACF
+
+
+#### Tech
+- F#
+- .NET 4.7 (needs mono on \*nix for now)
+- [Canopy](https://github.com/lefthandedgoat/canopy)
+- [Colorful.Console](https://github.com/tomakita/Colorful.Console)
