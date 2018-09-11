@@ -7,6 +7,7 @@ open Config
 open System
 open System.Drawing
 open Colorful
+open KanaInput
 
 type Console = Colorful.Console
 
@@ -17,38 +18,25 @@ type ReviewType =
     | VocabMeaning of string
     | VocabSpelling of string
 
-type ReviewAnswerInfo =
-    { LeftCol : (string * string) list
-      RightCol : (string * string) list }
+type ReviewAnswerInfo = bool * (string * string) list
 
 //let's write a state machine!
 type Page =
     | Login
     | DashBoard
-    | Review of ReviewType
-    | ReviewSuccess of ReviewType * ReviewAnswerInfo
-    | ReviewError of ReviewType * ReviewAnswerInfo
+    | Review of ReviewType * ReviewAnswerInfo option
     | ResultsPage
+    | OuterSpace
 
-let goToDashboard () =
-    url "https://wanikani.com/dashboard"
-    DashBoard
-    
+let getColor state =
+    match state with
+    | RadicalName _ -> Color.FromArgb(0, 0xa1, 0xf1)
+    | KanjiMeaning _ | KanjiSpelling _ -> Color.FromArgb(0xf1, 0, 0xa1)
+    | VocabMeaning _ | VocabSpelling _ -> Color.FromArgb(0xa1, 0, 0xf1)
 
-let login creds =
-    url "https://www.wanikani.com/login"
-    "#user_login" << creds.username
-    "#user_password" << creds.password
-    click "html body section.session.login div.wrapper form#new_user.new_user fieldset button.button" //submit
-    match currentUrl() with
-    | "https://www.wanikani.com/dashboard" -> DashBoard
-    | u -> 
-        do printfn "redirected to %s" u
-        do url "https://www.wanikani.com/login" //try login again
-        Login
+let (!!!) (str : string) (col : Color) : unit = Console.WriteLine(str, col)
 
-    
-let parseReviewPage() =
+let parseReviewType() =
     let itemType = (element "#character").GetAttribute("class")
     let questionType = (element "#question-type").GetAttribute("class")
     let item = read "#character>span"
@@ -58,109 +46,85 @@ let parseReviewPage() =
     | "kanji", "reading" -> KanjiSpelling item
     | "kanji", "meaning" -> KanjiMeaning item
     | "radical", "meaning" -> RadicalName item
-    | _ -> 
-        failwith 
-        <| sprintf "Couldn't parse this particular review page.\r\ntype = %s, question = %s, item = %s" itemType 
-               questionType item
-               
-let startReview () =
-    url "https://www.wanikani.com/review/session"
-    Review <| parseReviewPage ()
-    
-let parseinfo revt =
-    match revt with
-    | VocabMeaning s | KanjiMeaning s | RadicalName s -> 
-        let meaningPanel = element "#item-info-meaning"
-        let meaningTitle = read "#iteminfo-meaning>h2"
-        let meaningTerms = meaningPanel.Text.Replace(sprintf "<h2>%s</h2>" meaningTitle, "")
-        let infoPanel = element "#item-info-meaning-mnemonic"
-        let infoTitle = read "#item-info-meaning-mnemonic>h2"
-        let info = infoPanel.Text.Replace(sprintf "<h2>%s</h2>" infoTitle, "")
-        { LeftCol = [ (meaningTitle, meaningTerms) ]
-          RightCol = [ (infoTitle, info) ] }
-    | VocabSpelling s | KanjiSpelling s -> 
-        let readingTitle = read "#item-info-reading>h2"
-        let readingTerms = read "#item-info-reading>span"
-        let infoPanel = element "#item-info-reading-mnemonic"
-        let infoTitle = read "#item-info-reading-mnemonic>h2"
-        let info = infoPanel.Text.Replace(sprintf "<h2>%s</h2>" infoTitle, "")
-        { LeftCol = [ (readingTitle, readingTerms) ]
-          RightCol = [ (infoTitle, info) ] }
+    | _ -> failwith "couldn't parse review type"
 
-let parseReviewAnswerPage prev =
-    click "#option-item-info" //open the info panel
-    let success = (element "#answer-form>form>fieldset").GetAttribute("class") = "correct"
-    let info = parseinfo prev
-    if success then ReviewSuccess(prev, info)
-    else ReviewError(prev, info)
+let toPrompt rt =
+    match rt with
+    | RadicalName x -> sprintf "%s\r\nRadical Name" x
+    | KanjiMeaning x -> sprintf "%s\r\nKanji Meaning" x
+    | KanjiSpelling x -> sprintf "%s\r\nKanji Reading" x
+    | VocabMeaning x -> sprintf "%s\r\nVocab Meaning" x
+    | VocabSpelling x -> sprintf "%s\r\nVocab Reading" x
+
+let parseReviewPage() =
+    waitForElement "#character"
+    let reviewType = parseReviewType()
+    let box =
+        (element "html body div#reviews.pure-g-r div.pure-u-1 div#question div#answer-form form fieldset")
+            .GetAttribute("class")
+    match box with
+    | "" -> Review(reviewType, None)
+    | "correct" -> Review(reviewType, Some(true, []))
+    | "incorrect" -> Review(reviewType, Some(false, []))
+    | _ -> failwith "couldn't parse success status"
+
+let parsePage() =
+    let loc = currentUrl()
+    match loc with
+    | "https://www.wanikani.com/login" -> Login
+    | "https://www.wanikani.com/dashboard" -> DashBoard
+    | "https://www.wanikani.com/review" -> ResultsPage
+    | "https://www.wanikani.com/review/session" -> parseReviewPage()
+    | _ -> OuterSpace
+
+let viewReviewPrompt rt =
+    let col = getColor rt
+    (!!!) (toPrompt rt) col
+    (!!!) "Type your answer and submit with Enter" col
+
+let viewReview rt rai : unit =
+    match rai with
+    | None -> viewReviewPrompt rt
+    | Some(b, y) -> 
+        let color =
+            if b then Color.Red
+            else Color.Green
+        (!!!) (toPrompt rt) color
+        y |> List.iter (fun (x, z) -> (!!!) (sprintf "%s: %s\r\n" x z) color)
+        (!!!) "Press any key to continue." Color.White
+
+let viewPage page : unit =
+    match page with
+    | Login -> (!!!) "Please login! Press any key to continue." Color.White
+    | DashBoard -> (!!!) "Press any key to begin review session" Color.White
+    | OuterSpace -> (!!!) "I don't have any idea where you are. Probably need to try restarting" Color.White
+    | ResultsPage -> (!!!) "Someday, you'll see your results here!" Color.White
+    | Review(x, y) -> viewReview x y
+
+let routeToPage page =
+    match page with
+    | Login -> "https://www.wanikani.com/login"
+    | DashBoard -> "https://www.wanikani.com/dashboard"
+    | ResultsPage -> "https://www.wanikani.com/review"
+    | Review _ -> "https://www.wanikani.com/review/session"
+    | _ -> "https://www.wanikani.com/dashboard"
+
+let goToDashboard() =
+    url "https://wanikani.com/dashboard"
+    waitForElement "#burned"
+
+let login creds =
+    waitForElement "#user_login"
+    "#user_login" << creds.username
+    "#user_password" << creds.password
+    click "html body section.session.login div.wrapper form#new_user.new_user fieldset button.button" //submit
 
 
-let submitReviewAnswer state ans =
-    "#user-response" << ans //fill input
-    click "html body div#reviews.pure-g-r div.pure-u-1 div#question div#answer-form form fieldset button"
-    sleep 1
-    parseReviewAnswerPage state
-    
-let nextReviewPage () =
-    click "html body div#reviews.pure-g-r div.pure-u-1 div#question div#answer-form form fieldset button"
-    sleep 1
-    if currentUrl() = "https://www.wanikani.com/review/session" then
-        Review <| parseReviewPage()
-    else
-        ResultsPage
+//need to wire up actions to each page, as well as update tree to run recursively
 
+let waitForKeyPress() = Console.ReadKey() |> ignore
 
-let renderLines (color : Color) list = List.iter (fun (x : string) -> Console.WriteLine(x, color)) list
-
-let getColor state =
-    match state with
-    | RadicalName _ -> Color.FromArgb(0, 0xa1, 0xf1)
-    | KanjiMeaning _ | KanjiSpelling _ -> Color.FromArgb(0xf1, 0, 0xa1)
-    | VocabMeaning _ | VocabSpelling _ -> Color.FromArgb(0xa1, 0, 0xf1)
-    
-let renderPrompt state =
-    match state with
+let waitForInput rt : string =
+    match rt with
     | RadicalName _ | KanjiMeaning _ | VocabMeaning _ -> Console.ReadLine()
-    | KanjiSpelling _ | VocabSpelling _ -> KanaInput.getKanaInput ()
-    
-let renderQuery state =
-    renderLines 
-    <| getColor state 
-    <| match state with
-         | RadicalName s -> [s; "Radical Name"]
-         | KanjiMeaning s -> [s; "Meaning"]
-         | KanjiSpelling s -> [s; "Reading"]
-         | VocabMeaning s -> [s; "Meaning"]
-         | VocabSpelling s -> [s; "Reading"]
-
-let renderAndPrompt state =
-    do renderQuery state
-    do Console.WriteLine()
-    renderPrompt state
-    
-let renderSuccessPage state info =
-    let color = Color.FromArgb(0,0xa1,0)
-    do renderQuery state    
-    List.iter (fun (x,y) -> Console.WriteLine(sprintf "%s: %s" x y, color)) (info.LeftCol@info.RightCol)
-let renderErrorPage state info =
-    let color = Color.FromArgb(0xa1,0,0)
-    do renderQuery state    
-    List.iter (fun (x,y) -> Console.WriteLine(sprintf "%s: %s" x y, color)) (info.LeftCol@info.RightCol)  
-    
-let runPage page =
-    match page with 
-    | Login | DashBoard | ResultsPage -> page
-    | Review rt -> submitReviewAnswer rt <| renderAndPrompt rt
-    | ReviewSuccess (rt,info) -> renderSuccessPage rt info
-                                 Console.ReadLine() |> ignore
-                                 nextReviewPage ()
-    | ReviewError (rt,info) ->   renderErrorPage rt info
-                                 Console.ReadLine() |> ignore
-                                 nextReviewPage ()                              
-let runReview () =
-    let p = startReview ()
-    let rec run page =
-        match page with
-        | Review _ | ReviewError _ | ReviewSuccess _ -> runPage page
-        | _ -> goToDashboard ()
-    run p
+    | _ -> getKanaInput()

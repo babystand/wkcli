@@ -14,7 +14,7 @@ open canopy.classic
 [<EntryPoint>]
 let main argv =
     System.Console.OutputEncoding <- System.Text.Encoding.UTF8
-    start canopy.types.BrowserStartMode.ChromeHeadless
+    start canopy.types.BrowserStartMode.Chrome
     printfn "%O" <| login ( getCreds())
     runReview () |> ignore
     quit ()
