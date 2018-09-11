@@ -19,6 +19,6 @@ Cons:
 
 #### Tech
 - F#
-- .NET 4.7 (needs mono on \*nix for now)
+- .NET Core 2.1
 - [Canopy](https://github.com/lefthandedgoat/canopy)
 - [Colorful.Console](https://github.com/tomakita/Colorful.Console)
