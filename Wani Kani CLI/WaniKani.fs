@@ -60,6 +60,7 @@ let (!!!) (str : string) (col : Color) : unit = Console.WriteLine(str, col)
 
 let parseReviewType() =
     waitForElement "#character"
+    waitForElement "#question-type"
     let itemType = (element "#character").GetAttribute("class")
     let questionType = (element "#question-type").GetAttribute("class")
     let item = read "#character>span"

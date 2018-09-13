@@ -15,7 +15,7 @@ open canopy.classic
 let main argv =
     System.Console.OutputEncoding <- System.Text.Encoding.UTF8
     chromeDir <- Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-    start canopy.types.BrowserStartMode.ChromeHeadless
+    start canopy.types.BrowserStartMode.Chrome
     routeToPage Login
     runPage Login
     quit ()
