@@ -200,7 +200,7 @@ let waitForKeyPress() = Console.ReadKey() |> ignore
 
 let waitForInput rt : string =
     match rt with
-    | RadicalName _ | KanjiMeaning _ | VocabMeaning _ -> Console.ReadLine()
+    | RadicalName _ | KanjiMeaning _ | VocabMeaning _ -> getRomaInput()
     | _ -> getKanaInput()
 
 let clickReviewNext() =

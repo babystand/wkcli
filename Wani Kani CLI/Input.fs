@@ -1,7 +1,10 @@
 module Input
+open System
+open System
+open System
+
 
 type KanaConverting = string * string
-
 type KanaResult =
     | Kana of string
     | Roma of string
@@ -121,6 +124,7 @@ let convertPart (str : string) =
     | "pya" -> Kana "ぴゃ"
     | "pyu" -> Kana "ぴゅ"
     | "pyo" -> Kana "ぴょ"
+    | "-" -> Kana "ー"
     | (x : string) when x.Length > 1 && x.Chars 0 = 'n' 
                         && not <| List.contains (x.Chars 1) [ 'a'; 'i'; 'u'; 'e'; 'o'; 'y' ] -> 
         Split("ん", x.Substring 1)
@@ -142,7 +146,6 @@ let backspace (state : KanaConverting) =
     | y, x -> y, x.Substring(0, x.Length - 1)
 
 let flatten (state : KanaConverting) = fst state + snd state
-
 let clearLine() =
     let pos = System.Console.CursorTop
     let w = System.Console.BufferWidth
@@ -163,5 +166,28 @@ let getKanaInput() =
         | System.ConsoleKey.Backspace -> backspace state |> readKana
         | _ -> readKana <| convertInput state (k.KeyChar.ToString())
     let res =readKana init
+    printfn ""
+    res
+
+let ctrl = ConsoleModifiers.Control
+let alt = ConsoleModifiers.Alt
+let shift = ConsoleModifiers.Shift
+
+let convertToNumber (text:string) =
+    text
+let getRomaInput () =
+    let rec readRoma s =
+        clearLine()
+        printf "%s" s
+        let key = Console.ReadKey(true)
+        match (key.Modifiers, key.Key) with
+        | (_, ConsoleKey.F2) ->   convertToNumber s
+                                  |> readRoma
+        | (_, ConsoleKey.Enter) -> s
+        | (_, ConsoleKey.Backspace) -> s.Substring(0, s.Length - 1)
+                                       |> readRoma
+        | _ ->  sprintf "%s%c" s key.KeyChar
+                |> readRoma
+    let res = readRoma ""
     printfn ""
     res
