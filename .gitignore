@@ -278,7 +278,6 @@ FakesAssemblies/
 _Pvt_Extensions
 
 # Paket dependency manager
-.paket/paket.exe
 paket-files/
 
 # FAKE - F# Make
@@ -337,7 +336,7 @@ Debug
 *.user
 obj
 bin
-*.exe
+
 
 
 ### MonoDevelop ###

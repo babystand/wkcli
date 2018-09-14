@@ -1,0 +1,10 @@
+source https://api.nuget.org/v3/index.json
+
+nuget FSharp.Core
+nuget canopy 2.1.0
+nuget Colorful.Console 1.2.9
+nuget Humanizer 2.4.2
+nuget Selenium.Chrome.WebDriver 2.41.0
+nuget Selenium.Firefox.WebDriver 0.21.0
+nuget Selenium.Support 3.14.0
+nuget Selenium.WebDriver 3.14.0

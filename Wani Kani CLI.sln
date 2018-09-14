@@ -1,5 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{06AEACD0-A272-49F9-93EF-5EF74061F428}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Wani Kani CLI", "Wani Kani CLI\Wani Kani CLI.fsproj", "{D195BAF3-0D24-4502-84F8-2F486D419131}"
 EndProject
 Global
