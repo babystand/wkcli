@@ -29,8 +29,8 @@ type Page =
     | ResultsPage
     | OuterSpace
 let expandReviewItemInfo () =
-    do click "html body div#reviews.pure-g-r div.pure-u-1 div#additional-content ul li#option-item-info"
-    do waitForElement "#item-info"
+    click "html body div#reviews.pure-g-r div.pure-u-1 div#additional-content ul li#option-item-info"
+    waitForElement "#item-info"
     
 let parseExtraInfo rt =
     expandReviewItemInfo ()
@@ -58,6 +58,52 @@ let getColor state =
 
 let (!!!) (str : string) (col : Color) : unit = Console.WriteLine(str, col)
 
+let parseMissingRadical () =
+    waitForElement "html body div#reviews.pure-g-r div.pure-u-1 div#question div#character.radical span i"
+    let name = (element "html body div#reviews.pure-g-r div.pure-u-1 div#question div#character.radical span i").GetAttribute("class")
+    match name.Replace("radical-", "") with
+    | "gun" -> "𠂉"
+    | "beggar" -> "与 (without bottom line)"
+    | "leaf" -> "丆"
+    | "triceratops" -> "⺌"
+    | "stick" -> "⼁"
+    | "hat" -> "𠆢 (个 without the vertical line)"
+    | "horns" -> "丷"
+    | "spikes" -> "业"
+    | "cactus" -> "墟 (bottom right radical)"
+    | "trident" -> "棄 (center radical)"
+    | "shark" -> "烝"
+    | "comb" -> "段 (left half)"
+    | "egg" -> "乍 (without the top-left tick)"
+    | "death-star" -> "俞"
+    | "corn" -> "演 (middle radical)"
+    | "explosion" -> "渋 (bottom-right radical)"
+    | "hick" -> "度 (without the 又)"
+    | "worm" -> "堂 (without the top radicals)"
+    | "squid" -> "剣 (without the 刂)"
+    | "zombie" -> "遠 (without the ⻌ )"
+    | "grass" -> "⺍"
+    | "bar" -> "残 (right half)"
+    | "creeper" -> "司 (inside radical)"
+    | "cloak" -> "司 (outside radical)"
+    | "train" -> "夫"
+    | "tofu" -> "旅 (bottom-right radical)"
+    | "bear" -> "官 (without the 宀)"
+    | "boob" -> "育 (top half)"
+    | "blackjack" -> "昔 (top half)"
+    | "chinese" -> "漢 (right half)"
+    | "pope" -> "盾 (inside radical)"
+    | "cleat" -> "⺤"
+    | "hills" -> "之 (without the top tick)"
+    | "kick" -> "表 (bottom half)"
+    | "viking" -> "学 (without the 子)"
+    | "potato" -> "華 (without the ⺾)"
+    | "water-slide" -> "⻌"
+    | "psychopath" -> "鬱 (bottom half)"
+    | "morning" -> "乾 (left radical)"
+    | "saw" -> "恐 (without the ⼼)"
+    | _ -> ""
+
 let parseReviewType() =
     waitForElement "#character"
     waitForElement "#question-type"
@@ -69,7 +115,9 @@ let parseReviewType() =
     | "vocabulary", "meaning" -> VocabMeaning item
     | "kanji", "reading" -> KanjiSpelling item
     | "kanji", "meaning" -> KanjiMeaning item
-    | "radical", "meaning" -> RadicalName item
+    | "radical", "meaning" -> match item with
+                              | "" -> RadicalName <| parseMissingRadical ()
+                              | _ -> RadicalName item
     | _ -> failwith "couldn't parse review type"
 
 let toPrompt rt =
@@ -160,27 +208,27 @@ let clickReviewNext() =
 
 let submitReviewAnswer ans =
     "#user-response" << ans
-    do clickReviewNext()
+    clickReviewNext()
 
 let rec runPage page =
-    do viewPage page
+    viewPage page
     match page with
     | Login -> 
-        do waitForKeyPress()
-        do login <| getCreds()
+        waitForKeyPress()
+        login <| getCreds()
     | DashBoard -> 
-        do waitForKeyPress()
-        do goToReview()
+        waitForKeyPress()
+        goToReview()
     | Review(rt, None) -> 
         let input = waitForInput rt
-        do submitReviewAnswer input
+        submitReviewAnswer input
     | Review(rt, Some(b, ls)) -> 
-        do waitForKeyPress()
-        do clickReviewNext()
+        waitForKeyPress()
+        clickReviewNext()
     | ResultsPage -> 
-        do waitForKeyPress()
-        do routeToPage DashBoard
+        waitForKeyPress()
+        routeToPage DashBoard
     | OuterSpace -> 
-        do waitForKeyPress()
-        do routeToPage DashBoard
+        waitForKeyPress()
+        routeToPage DashBoard
     runPage <| parsePage()
