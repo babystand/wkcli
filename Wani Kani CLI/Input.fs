@@ -1,7 +1,6 @@
 module Input
 open System
-open System
-open System
+open Humanizer
 
 
 type KanaConverting = string * string
@@ -173,19 +172,30 @@ let ctrl = ConsoleModifiers.Control
 let alt = ConsoleModifiers.Alt
 let shift = ConsoleModifiers.Shift
 
-let convertToNumber (text:string) =
-    text
+let convertToNumber (text:string) ord =
+    let (b, i) = Int32.TryParse(text)
+    match (b, ord) with
+    | (false, _) -> text
+    | (true, true) -> i.ToOrdinalWords()
+    | (true,false) -> i.ToWords() 
+    
 let getRomaInput () =
     let rec readRoma s =
         clearLine()
         printf "%s" s
         let key = Console.ReadKey(true)
         match (key.Modifiers, key.Key) with
-        | (_, ConsoleKey.F2) ->   convertToNumber s
+        | (_, ConsoleKey.F2) ->   convertToNumber s false
+                                  |> readRoma        
+        | (_, ConsoleKey.F3) ->   convertToNumber s true
                                   |> readRoma
         | (_, ConsoleKey.Enter) -> s
-        | (_, ConsoleKey.Backspace) -> s.Substring(0, s.Length - 1)
-                                       |> readRoma
+        | (_, ConsoleKey.Backspace) -> readRoma
+                                       <| match s with
+                                          | "" -> ""
+                                          | _ -> s.Substring(0, s.Length - 1)
+        
+                                       
         | _ ->  sprintf "%s%c" s key.KeyChar
                 |> readRoma
     let res = readRoma ""
