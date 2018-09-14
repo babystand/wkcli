@@ -7,7 +7,7 @@ open Config
 open System
 open System.Drawing
 open Colorful
-open KanaInput
+open Input
 open canopy
 
 type Console = Colorful.Console

@@ -1,4 +1,4 @@
-module KanaInput
+module Input
 
 type KanaConverting = string * string
 
